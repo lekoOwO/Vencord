@@ -16,29 +16,25 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-export const enum UserType {
-    Banned = -1,
-    Normal = 0,
-    Admin = 1
+export interface ImageModalClasses {
+    image: string,
+    modal: string,
+    responsiveWidthMobile: string;
 }
 
-export interface BanInfo {
-    id: string;
-    discordID: string;
-    reviewID: number;
-    reviewContent: string;
-    banEndDate: string;
-}
-
-export interface ReviewDBUser {
-    ID: number
-    discordID: string
-    username: string
-    profilePhoto: string
-    clientMod: string
-    warningCount: number
-    badges: any[]
-    banInfo: BanInfo | null
-    lastReviewID: number
-    type: UserType
+export interface ButtonWrapperClasses {
+    hoverScale: string;
+    buttonWrapper: string;
+    button: string;
+    iconMask: string;
+    buttonContent: string;
+    icon: string;
+    pulseIcon: string;
+    pulseButton: string;
+    notificationDot: string;
+    sparkleContainer: string;
+    sparkleStar: string;
+    sparklePlus: string;
+    sparkle: string;
+    active: string;
 }
