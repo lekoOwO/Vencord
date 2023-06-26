@@ -20,9 +20,10 @@ import { CheckedTextInput } from "@components/CheckedTextInput";
 import { Flex } from "@components/Flex";
 import { Button, Forms, React, TabBar, Text, TextArea, Toasts } from "@webpack/common";
 
-import { convert as convertLineSP, getIdFromUrl as getLineIdFromUrl, getStickerPackById, parseHtml as getLineSPFromHtml } from "../lineStickers";
+import { convert as convertLineSP, getIdFromUrl as getLineStickerPackIdFromUrl, getStickerPackById as getLineStickerPackById, parseHtml as getLineSPFromHtml, isLineStickerPackHtml } from "../lineStickers";
+import { convert as convertLineEP, getIdFromUrl as getLineEmojiPackIdFromUrl, getStickerPackById as getLineEmojiPackById, parseHtml as getLineEPFromHtml, isLineEmojiPackHtml } from "../lineEmojis";
 import { deleteStickerPack, getStickerPackMetas, saveStickerPack } from "../stickers";
-import { StickerPack,StickerPackMeta } from "../types";
+import { StickerPack, StickerPackMeta } from "../types";
 
 enum SettingsTabsKey {
     ADD_STICKER_PACK_URL = "Add from URL",
@@ -139,12 +140,15 @@ export const Settings = () => {
                                 onChange={setAddStickerUrl}
                                 validate={(v: string) => {
                                     try {
-                                        getLineIdFromUrl(v);
-                                    } catch (e: any) {
-                                        return e.message;
-                                    }
+                                        getLineStickerPackIdFromUrl(v);
+                                        return true;
+                                    } catch (e: any) { }
+                                    try {
+                                        getLineEmojiPackIdFromUrl(v);
+                                        return true;
+                                    } catch (e: any) { }
 
-                                    return true;
+                                    return "Invalid URL";
                                 }}
                                 placeholder="Sticker Pack URL"
                             />
@@ -153,25 +157,69 @@ export const Settings = () => {
                             size={Button.Sizes.SMALL}
                             onClick={async e => {
                                 e.preventDefault();
+
+                                let type: string = "";
                                 try {
-                                    const id = getLineIdFromUrl(addStickerUrl);
-                                    const lineSP = await getStickerPackById(id);
-                                    const stickerPack = convertLineSP(lineSP);
-                                    await saveStickerPack(stickerPack);
-                                    setAddStickerUrl("");
-                                    refreshStickerPackMetas();
-                                    Toasts.show({
-                                        message: "Sticker Pack added",
-                                        type: Toasts.Type.SUCCESS,
-                                        id: Toasts.genId(),
-                                        options: {
-                                            duration: 1000
+                                    getLineStickerPackIdFromUrl(addStickerUrl);
+                                    type = "LineStickerPack";
+                                } catch (e: any) { }
+
+                                try {
+                                    getLineEmojiPackIdFromUrl(addStickerUrl);
+                                    type = "LineEmojiPack";
+                                } catch (e: any) { }
+
+                                let errorMessage = "";
+                                switch (type) {
+                                    case "LineStickerPack": {
+                                        try {
+                                            const id = getLineStickerPackIdFromUrl(addStickerUrl);
+                                            const lineSP = await getLineStickerPackById(id);
+                                            const stickerPack = convertLineSP(lineSP);
+                                            await saveStickerPack(stickerPack);
+                                            setAddStickerUrl("");
+                                            refreshStickerPackMetas();
+                                            Toasts.show({
+                                                message: "Sticker Pack added",
+                                                type: Toasts.Type.SUCCESS,
+                                                id: Toasts.genId(),
+                                                options: {
+                                                    duration: 1000
+                                                }
+                                            });
+                                        } catch (e: any) {
+                                            console.error(e);
+                                            errorMessage = e.message;
                                         }
-                                    });
-                                } catch (e: any) {
-                                    console.error(e);
+                                        break;
+                                    };
+                                    case "LineEmojiPack": {
+                                        try {
+                                            const id = getLineEmojiPackIdFromUrl(addStickerUrl);
+                                            const lineEP = await getLineEmojiPackById(id);
+                                            const stickerPack = convertLineEP(lineEP);
+                                            await saveStickerPack(stickerPack);
+                                            setAddStickerUrl("");
+                                            refreshStickerPackMetas();
+                                            Toasts.show({
+                                                message: "Sticker Pack added",
+                                                type: Toasts.Type.SUCCESS,
+                                                id: Toasts.genId(),
+                                                options: {
+                                                    duration: 1000
+                                                }
+                                            });
+                                        } catch (e: any) {
+                                            console.error(e);
+                                            errorMessage = e.message;
+                                        }
+                                        break;
+                                    }
+                                }
+
+                                if (errorMessage) {
                                     Toasts.show({
-                                        message: e.message,
+                                        message: errorMessage,
                                         type: Toasts.Type.FAILURE,
                                         id: Toasts.genId(),
                                         options: {
@@ -179,6 +227,7 @@ export const Settings = () => {
                                         }
                                     });
                                 }
+
                             }}
                         >Insert</Button>
                     </Flex>
@@ -212,24 +261,51 @@ export const Settings = () => {
                             size={Button.Sizes.SMALL}
                             onClick={async e => {
                                 e.preventDefault();
-                                try {
-                                    const lineSP = getLineSPFromHtml(addStickerHtml);
-                                    const stickerPack = convertLineSP(lineSP);
-                                    await saveStickerPack(stickerPack);
+
+                                let errorMessage = "";
+                                if (isLineEmojiPackHtml(addStickerHtml)) {
+                                    try {
+                                        const lineSP = getLineSPFromHtml(addStickerHtml);
+                                        const stickerPack = convertLineSP(lineSP);
+                                        await saveStickerPack(stickerPack);
+                                        Toasts.show({
+                                            message: "Sticker Pack added",
+                                            type: Toasts.Type.SUCCESS,
+                                            id: Toasts.genId(),
+                                            options: {
+                                                duration: 1000
+                                            }
+                                        });
+                                        setAddStickerHtml("");
+                                        refreshStickerPackMetas();
+                                    } catch (e: any) {
+                                        console.error(e);
+                                        errorMessage = e.message;
+                                    }
+                                } else if (isLineStickerPackHtml(addStickerHtml)) {
+                                    try {
+                                        const lineEP = getLineEPFromHtml(addStickerHtml);
+                                        const stickerPack = convertLineEP(lineEP);
+                                        await saveStickerPack(stickerPack);
+                                        Toasts.show({
+                                            message: "Sticker Pack added",
+                                            type: Toasts.Type.SUCCESS,
+                                            id: Toasts.genId(),
+                                            options: {
+                                                duration: 1000
+                                            }
+                                        });
+                                        setAddStickerHtml("");
+                                        refreshStickerPackMetas();
+                                    } catch (e: any) {
+                                        console.error(e);
+                                        errorMessage = e.message;
+                                    }
+                                }
+
+                                if (errorMessage) {
                                     Toasts.show({
-                                        message: "Sticker Pack added",
-                                        type: Toasts.Type.SUCCESS,
-                                        id: Toasts.genId(),
-                                        options: {
-                                            duration: 1000
-                                        }
-                                    });
-                                    setAddStickerHtml("");
-                                    refreshStickerPackMetas();
-                                } catch (e: any) {
-                                    console.error(e);
-                                    Toasts.show({
-                                        message: e.message,
+                                        message: errorMessage,
                                         type: Toasts.Type.FAILURE,
                                         id: Toasts.genId(),
                                         options: {

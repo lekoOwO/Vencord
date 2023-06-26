@@ -27,6 +27,17 @@ export interface LineSticker {
     stickerPackId: LineStickerPack["id"];
 }
 
+export interface LineEmoji {
+    animationUrl: string;
+    type: string;
+    id: string;
+    staticUrl: string;
+    animationMainImages?: string[];
+    staticMainImages?: string[];
+    stickerPackId: LineStickerPack["id"];
+    fallbackStaticUrl?: string;
+}
+
 export interface LineStickerPack {
     title: string;
     author: {
@@ -38,11 +49,23 @@ export interface LineStickerPack {
     stickers: LineSticker[];
 }
 
+export interface LineEmojiPack {
+    title: string;
+    author: {
+        name: string;
+        url: string;
+    },
+    id: string;
+    mainImage: LineSticker;
+    stickers: LineEmoji[];
+}
+
 export interface Sticker {
     id: string;
     image: string;
     title: string;
     stickerPackId: StickerPackMeta["id"];
+    filename?: string;
 }
 
 export interface StickerPackMeta {

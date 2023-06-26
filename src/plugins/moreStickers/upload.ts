@@ -104,8 +104,24 @@ export async function sendSticker({
         const orgImageUrl = URL.createObjectURL(await response.blob());
         const processedImage = await resizeImage(orgImageUrl);
 
-        const filename = (new URL(sticker.image)).pathname.split("/").pop();
-        const file = new File([processedImage], filename!, { type: "image/png" });
+        const filename = sticker.filename ?? (new URL(sticker.image)).pathname.split("/").pop();
+        let mimeType = "image/png";
+        switch (filename?.split(".").pop()?.toLowerCase()) {
+            case "jpg":
+            case "jpeg":
+                mimeType = "image/jpeg";
+                break;
+            case "gif":
+                mimeType = "image/gif";
+                break;
+            case "webp":
+                mimeType = "image/webp";
+                break;
+            case "svg":
+                mimeType = "image/svg+xml";
+                break;
+        }
+        const file = new File([processedImage], filename!, { type: mimeType });
 
         if (ctrlKey) {
             promptToUpload([file], ChannelStore.getChannel(channelId), 0);
